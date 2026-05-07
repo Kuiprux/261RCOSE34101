@@ -1,0 +1,28 @@
+운영체제 실습 과제 2
+
+1. 시스템콜 작동 과정 분석
+사용자 프로그램에서 write 함수를 호출한다. 이 함수는 시스템 콜을 대신 수행해 주는 C 라이브러리 래퍼 함수이다. 이 함수는 시스템콜 번호와 인자를 준비한 뒤 syscall 명령어를 실행한다. syscall 명령어가 실행되면 CPU 권한 수준이 사용자 모드에서 커널 모드로 전환되고, 커널의 시스템콜 진입 지점으로 제어가 이동한다. 커널은 사용자 프로그램의 실행 상태를 저장한 뒤, 전달된 시스템콜 번호를 확인하여 시스템 콜 테이블을 조회하고, 해당 번호에 매핑된 커널 핸들러 함수를 호출한다. 핸들러 함수의 처리가 끝나면 커널은 반환값이나 오류 코드를 준비한다. 그리고 나서 저장해 둔 사용자 실행 상태를 복원하고 sysret을 통해 사용자 모드로 복귀한다. 이후 write 함수는 반환된 값을 리턴하며, 사용자 프로그램은 write 함수로부터 반환값을 받는다.
+
+2. 시스템콜 생성 및 커널 컴파일 실습
+i) 시스템 콜 테이블에 새로운 시스템 콜 등록
+시스템 콜 번호 462, 463, 464를 각각 sys_print_student_name, sys_print_student_id, sys_print_student_info 함수와 연결했다. 커널은 시스템 콜 번호를 받아 그에 맞는 핸들러 함수를 실행해야 하므로 각 번호를 핸들러 함수에 연결하는 작업이 필요하다. 
+ii) syscalls.h에 새로운 시스템 콜 등록
+asmlinkage long sys_print_student_name(char __user *name);
+asmlinkage long sys_print_student_id(char __user *id);
+asmlinkage long sys_print_student_info(char __user *school, char __user *major);
+를 추가했다. 이 헤더 파일에 새로 추가할 함수를 선언하여 컴파일러에게 함수의 형태를 미리 알려줄 수 있다.
+iii) Makefile에 새로운 시스템 콜 함수 파일 추가
+Makefile에 new_syscall.o를 추가했다. 이 작업을 통해 커널을 빌드할 때 우리가 추가한 소스 파일도 같이 빌드되게끔 한다.
+iv) new_syscall.c 작성
+sys_print_student_name 함수는 사용자 포인터로 전달된 name 문자열을 커널 버퍼로 복사한 뒤 printk로 이름을 커널 로그에 출력한다.
+sys_print_student_id 함수는 id 문자열을 동일하게 복사한 수 printk로 학번을 커널 로그에 출력한다.
+sys_print_student_info 함수는 school, major을 각각 사용자 공간에서 복사하여 printk로 학교와 전공을 커널 로그에 출력한다.
+각 함수는 사용자 포인터 접근 시 복사 결과를 점검하고, 실패할 경우 -EFAULT를 반환한다.
+v) .config 파일 수정
+CONFIG_SYSTEM_TRUSTED_KEYS와 CONFIG_SYSTEM_REVOCATION_KEYS 값을 빈 문자열로 바꾸었는데, 서명 키가 다르면 빌드하거나 설치하는 과정에서 실패할 수 있기 때문에 키 관련 정보를 비워 두었다.
+vi) 커널 버전 확인
+uname -r의 결과로 출력된 버전이 코드를 수정하고, 빌드하고, 설치한 커널의 버전과 일치하므로 수정한 커널이 정상적으로 반영되어 현재 실행되고 있음을 알 수 있다.
+vii) call_new_syscall.c 작성
+syscall(462, name), syscall(463, id), syscall(464, school, major) 형태로 사전에 지정해 둔 시스템 콜 번호를 직접 지정하여 호출하였다. 인자로는 각각 커널 핸들러 함수 시그니처에 맞게 462와 463에는 하나의 문자열 인자를, 464에는 두 개의 문자열 인자를 전달하였다.
+viii) call_new_syscall.c 컴파일 및 실행, dmesg를 사용한 커널 메시지 출력
+프로그램 실행 후 dmesg 명령어를 통해 보이는 로그에서 “My name is ...”, “My Student Id is ...”, “I go to ...”, “I major in ...” 내용의 printk 메시지를 통해, 우리가 시스템 콜 번호와 함께 호출한 시스템 콜이 커널로 전달되어 커널 핸들러 실행까지 정상적으로 되었음을 알 수 있다. 
