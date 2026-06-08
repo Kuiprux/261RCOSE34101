@@ -7,14 +7,21 @@ void add_to_ready_queue_round_queue(data_structure* ready_queue, Job* job)
 Job* schedule_round_queue(data_structure* ready_queue, schedule_result* sch_result)
 {
 	Job* next_job = 0;
-	round_queue_pop(ready_queue, next_job);
+	round_queue_pop(ready_queue, (void**)&next_job);
 
 	return next_job;
 }
 Job* schedule_tree(data_structure* ready_queue, schedule_result* sch_result)
 {
 	Job* next_job = 0;
-	tree_pop_max(ready_queue, next_job);
+	tree_pop_max(ready_queue, (void**)&next_job);
+
+	return next_job;
+}
+Job* schedule_tree_min(data_structure* ready_queue, schedule_result* sch_result)
+{
+	Job* next_job = 0;
+	tree_pop_min(ready_queue, (void**)&next_job);
 
 	return next_job;
 }
@@ -38,4 +45,8 @@ void priority_add_to_ready_queue(data_structure* ready_queue, Job* job)
 int rr_should_preempty(int cur_time, Job* job)
 {
 	return cur_time - job->run_start_time >= TIME_QUANTUM;
+}
+int wrr_should_preempty(int cur_time, Job* job)
+{
+	return cur_time - job->run_start_time >= TIME_QUANTUM * job->time_quantum_multiplier;
 }

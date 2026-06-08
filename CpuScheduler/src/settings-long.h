@@ -1,10 +1,10 @@
 #pragma once
 
-#define PROCESS_MIN 5
-#define PROCESS_MAX 10
+#define PROCESS_MIN 50
+#define PROCESS_MAX 100
 
 #define PID_MIN 0
-#define PID_MAX 99
+#define PID_MAX 999
 #define PID_AVAILABLE_AMOUNT PID_MAX - PID_MIN + 1
 
 #define JOB_QUEUE_SIZE PROCESS_MAX
@@ -15,7 +15,7 @@
 #define EXTRA_CPU_BURST_TIME_MAX 20
 
 #define IO_BURST_AMOUNT_MIN 0
-#define IO_BURST_AMOUNT_MAX 3
+#define IO_BURST_AMOUNT_MAX 2
 
 #define IO_GAP_MIN 2
 #define IO_GAP_MAX 5

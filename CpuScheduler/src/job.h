@@ -12,6 +12,7 @@ typedef struct
 	int io_burst_times[20];
 	int priority;
 	int time_quantum_multiplier;
+	
 	int arr_index;
 
 	int next_arrival_time;
@@ -20,27 +21,5 @@ typedef struct
 	int next_io_index;
 } Job;
 
-int job_compare(Job* a, Job* b)
-{
-	if (*(a->first_priority) > *(b->first_priority))
-		return 1;
-	if (*(a->first_priority) > *(b->first_priority))
-		return -1;
-
-	if (*(a->second_priority) > *(b->second_priority))
-		return 1;
-	if (*(a->second_priority) > *(b->second_priority))
-		return -1;
-
-	return 0;
-}
-
-int job_pid_compare(Job* a, Job* b)
-{
-	if (a->pid > b->pid)
-		return 1;
-	if (a->pid > b->pid)
-		return -1;
-
-	return 0;
-}
+int job_compare(Job* a, Job* b);
+int job_pid_compare(const void* a, const void* b);

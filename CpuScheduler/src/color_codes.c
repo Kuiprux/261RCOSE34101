@@ -1,4 +1,12 @@
 #include "color_codes.h"
+#include <math.h>
+#include <stdio.h>
+
+int color8_codes[] = { 41, 43, 42, 44, 46, 45 };
+int color16_codes[] = { 101, 41, 43, 103, 102, 42, 44, 46, 106, 105, 45 };
+int color256_codes[] = { 53, 54, 60, 24, 6, 30, 36, 72, 71, 77, 113, 149, 148, 184, 220 };
+
+#include "color_codes_data.inc"
 
 int calc_ratio_int(int index, int len, int max)
 {
@@ -28,6 +36,11 @@ rgb calc_ratio_color(int index, int len, rgb_double* color_codes, int color_code
 	return interpolate_color(color_codes[color_index_left], color_codes[color_index_left + 1], t);
 }
 
+static int color_array_max_index(int array_len)
+{
+	return array_len > 0 ? array_len - 1 : 0;
+}
+
 void get_ansi_color(int index, int len, ColorMode mode, char* buffer)
 {
 	int color_index;
@@ -36,20 +49,20 @@ void get_ansi_color(int index, int len, ColorMode mode, char* buffer)
 	switch (mode)
 	{
 	case COLOR_8:
-		sprintf(buffer, "\033[%dm", calc_ratio_int(index, len, sizeof(color8_codes) / sizeof(color8_codes[0])));
+		color_index = calc_ratio_int(index, len, color_array_max_index(sizeof(color8_codes) / sizeof(color8_codes[0])));
+		sprintf(buffer, "\033[%dm", color8_codes[color_index]);
 		break;
 	case COLOR_16:
-		sprintf(buffer, "\033[%dm", calc_ratio_int(index, len, sizeof(color16_codes) / sizeof(color16_codes[0])));
+		color_index = calc_ratio_int(index, len, color_array_max_index(sizeof(color16_codes) / sizeof(color16_codes[0])));
+		sprintf(buffer, "\033[%dm", color16_codes[color_index]);
 		break;
 	case COLOR_256:
-		color_index = calc_ratio_int(index, len, sizeof(color256_codes) / sizeof(color256_codes[0]));
-		sprintf(buffer, "\033[38:5:%dm", color256_codes[color_index]);
+		color_index = calc_ratio_int(index, len, color_array_max_index(sizeof(color256_codes) / sizeof(color256_codes[0])));
+		sprintf(buffer, "\033[48;5;%dm", color256_codes[color_index]);
 		break;
 	case COLOR_TRUE:
 		rgb_color = calc_ratio_color(index, len, colortrue_codes, sizeof(colortrue_codes) / sizeof(colortrue_codes[0]));
-		sprintf(buffer, "\033[38:2:%d:%d:%dm", rgb_color.r, rgb_color.g, rgb_color.b);
+		sprintf(buffer, "\033[48;2;%d;%d;%dm", rgb_color.r, rgb_color.g, rgb_color.b);
 		break;
 	}
-
-	return buffer;
 }

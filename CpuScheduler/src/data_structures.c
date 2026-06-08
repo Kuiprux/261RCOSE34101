@@ -1,30 +1,49 @@
+#include <stdlib.h>
 #include "job.h"
 #include "data_structures.h"
+
+static void _tree_heapify_up(data_structure* das, int index)
+{
+	while (index > 0) {
+		int parent = (index - 1) / 2;
+		int cmp = das->compare(das->arr[index], das->arr[parent]);
+		if (das->is_max_heap ? cmp <= 0 : cmp >= 0)
+			return;
+
+		void* tmp = das->arr[index];
+		das->arr[index] = das->arr[parent];
+		das->arr[parent] = tmp;
+		index = parent;
+	}
+}
 
 int tree_insert(data_structure* das, void* data)
 {
 	if (das->end == das->len)
 		return 0;
 
-	das->arr[das->end] = das->arr[0];
-	das->arr[0] = data;
+	das->arr[das->end] = data;
 	das->end++;
 
-	_tree_update_root(das);
+	_tree_heapify_up(das, das->end - 1);
 
 	return 1;
 }
 
-int tree_pop_min(data_structure* das, void* data)
+int tree_pop_min(data_structure* das, void** data)
 {
-
+	int saved = das->is_max_heap;
+	das->is_max_heap = 0;
+	int result = tree_pop_max(das, data);
+	das->is_max_heap = saved;
+	return result;
 }
-int tree_pop_max(data_structure* das, void* data)
+int tree_pop_max(data_structure* das, void** data)
 {
 	if (das->end == 0)
 		return 0;
 
-	data = das->arr[0];
+	*data = das->arr[0];
 	das->arr[0] = das->arr[das->end - 1];
 	das->end--;
 
@@ -32,12 +51,12 @@ int tree_pop_max(data_structure* das, void* data)
 
 	return 1;
 }
-int tree_peek(data_structure* das, void* data)
+int tree_peek(data_structure* das, void** data)
 {
 	if (das->end == 0)
 		return 0;
 
-	data = das->arr[0];
+	*data = das->arr[0];
 
 	return 1;
 }
@@ -51,18 +70,27 @@ void _tree_update_root(data_structure* das)
 	int index = 0;
 
 	while (1) {
-		int bigger_index = index;
-		if (index * 2 < das->end && das->compare(das->arr+(index * 2), das->arr+(bigger_index)) > 0)
-			bigger_index = index * 2;
-		if (index * 2 + 1 < das->end && das->compare(das->arr+(index * 2 + 1), das->arr+(bigger_index)) > 0)
-			bigger_index = index * 2 + 1;
+		int better_index = index;
+		int left = index * 2 + 1;
+		int right = index * 2 + 2;
+		if (left < das->end) {
+			int cmp = das->compare(das->arr[left], das->arr[better_index]);
+			if (das->is_max_heap ? cmp > 0 : cmp < 0)
+				better_index = left;
+		}
+		if (right < das->end) {
+			int cmp = das->compare(das->arr[right], das->arr[better_index]);
+			if (das->is_max_heap ? cmp > 0 : cmp < 0)
+				better_index = right;
+		}
 
-		if (bigger_index == index)
+		if (better_index == index)
 			return;
 
 		void* tmp = das->arr[index];
-		das->arr[index] = das->arr[bigger_index];
-		das->arr[bigger_index] = tmp;
+		das->arr[index] = das->arr[better_index];
+		das->arr[better_index] = tmp;
+		index = better_index;
 	}
 }
 
@@ -79,12 +107,12 @@ int round_queue_push(data_structure* das, void* data)
 	return 1;
 }
 
-int round_queue_pop(data_structure* das, void* data)
+int round_queue_pop(data_structure* das, void** data)
 {
 	if (das->start == das->end)
 		return 0;
 
-	data = das->arr[das->start];
+	*data = das->arr[das->start];
 	das->start = (das->start + 1) % das->len;
 
 	return 1;
@@ -98,14 +126,14 @@ void schedule_result_add(schedule_result* sch, int arr_index, int time, event_ty
 	new_part->arr_index = arr_index;
 	new_part->time = time;
 	new_part->type = type;
+	new_part->next = 0;
 
 	if (!sch->last)
-		sch->last = new_part;
-	else
+		sch->start = sch->last = new_part;
+	else {
 		sch->last->next = new_part;
-
-	if (!sch->start)
-		sch->start = sch->last;
+		sch->last = new_part;
+	}
 }
 void schedule_result_free(schedule_result* sch)
 {
